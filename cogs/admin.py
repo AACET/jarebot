@@ -1,8 +1,11 @@
+import logging
 import os
 from pydoc import describe
 from discord.ext import commands
 import discord
 from libs import config
+
+logger = logging.getLogger(__name__)
 
 class Admin(commands.Cog):
 
@@ -11,8 +14,15 @@ class Admin(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        
-        await self.bot.change_presence(activity=discord.Game("café nas pessoas"))
+        fmt = await self.bot.tree.sync(guild=discord.Object(id=config.utils.getint('guild_id')))
+        logger.info(f"Synced {len(fmt)} commands")
+
+    @discord.app_commands.command(name="espumoso")
+    async def espumoso(self, interaction: discord.Interaction, member: discord.Member):
+        role = member.guild.get_role(config.utils.getint("espumoso_role"))
+        await member.add_roles(role)
+        await interaction.response.send_message(f"{member.mention} foi mandado para *Espumoso*.")
+
 
     @discord.app_commands.command(name="reload", description='Recarrega algumas funcionalidades')
     @discord.app_commands.checks.has_permissions(administrator=True)
@@ -22,9 +32,9 @@ class Admin(commands.Cog):
         cogs = []
         fail_cogs = []
         for cog in os.listdir("cogs"):
-            if not os.path.isfile("cogs\\"+cog): continue            
+            if not os.path.isfile("cogs\\"+cog): continue     
             try:       
-            await self.bot.reload_extension(f"cogs.{cog[:-3]}")
+                await self.bot.reload_extension(f"cogs.{cog[:-3]}")
                 cogs.append(f'`✅ {cog}`')
             except:
                 cogs.append(f'`❎ {cog}`')

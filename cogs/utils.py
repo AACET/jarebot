@@ -11,4 +11,4 @@ class Utils(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Utils(bot))
+    await bot.add_cog(Utils(bot), guilds=[discord.Object(id=1024844907090821120)])

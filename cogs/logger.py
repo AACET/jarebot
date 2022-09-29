@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, tzinfo
+from operator import add
 from discord.ext import commands
 import discord
 from libs import config
@@ -131,19 +132,58 @@ class Logger(commands.Cog):
         if new.timed_out_until != old.timed_out_until:
             entry = await self.get_entry(discord.AuditLogAction.member_update, new.guild)
             if new.timed_out_until:
-                delta = datetime.now() - datetime.fromtimestamp(new.timed_out_until)
-                
+                delta = new.timed_out_until.timestamp()  - datetime.now().timestamp()   
                 await self.log(
                     channel,
                     "😶 Membro silenciado",
                     f"Um membro foi silenciado",
                     [
                         ["Membro", new.mention],
-                        ["Quem silenciou", entry.user],
-                        ["Tempo", delta.seconds]
-                    ],
-            
+                        ["Quem silenciou", entry.user.mention],
+                        ["Tempo", f"{round(delta)} segundos"]
+                    ],            
                 )
+            else:
+                await self.log(
+                    channel,
+                    "🗣️ Silenciamento removido",
+                    f"Um membro teve seu som restaurado",
+                    [
+                        ["Membro", new.mention],
+                    ],            
+                )
+
+        elif new.roles != old.roles:
+            entry = await self.get_entry(discord.AuditLogAction.member_update, new.guild)
+            added_roles: list[discord.Role] = []
+            removed_roles: list[discord.Role] = []
+            for role in [*old.roles, *new.roles]:
+                if role not in old.roles:
+                    added_roles.append(role)
+                elif role not in new.roles:
+                    removed_roles.append(role)
+            
+            fields: list[list[str]] = []
+
+            if added_roles:
+                fields.append(["Cargos Adicionados", "\n".join([i.mention for i in added_roles])])
+            if removed_roles:
+                fields.append(["Cargos Removidos", "\n".join([i.mention for i in removed_roles])])
+            
+            await self.log(
+                channel,
+                "✍️ Mudança de cargos",
+                f"Um membro teve seus cargos editados",
+                [
+                    *fields,
+                    ["Membro", new.mention],
+                    ["Quem editou", entry.user.mention]
+                ],
+                new
+            )
+
+
+        
 
 
 async def setup(bot):

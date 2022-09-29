@@ -76,6 +76,37 @@ class Logger(commands.Cog):
             ],
     
         )
+    @commands.Cog.listener()
+    async def on_guild_role_update(self, old: discord.Role, new: discord.Role):
+        channel = old.guild.get_channel(config.logger.getint("channel_id"))
+        actor = await self.get_actor(discord.AuditLogAction.role_update, old.guild)
+        fields: list[list[str]] = []
+
+        if old.name != new.name:
+            fields.append(["Nome anterior", old.name])
+            fields.append(["Nome atual", new.name])
+
+        changed_perms = []
+        old_perms = {perm: state for perm, state in old.permissions}
+        for perm, state in new.permissions:
+            if old_perms[perm] != state:
+                changed_perms.append(f"`{'❎' if not state else '✅'} {perm}`")
+        
+        if changed_perms:
+            fields.extend([
+                ["Permissões editadas", '\n'.join(changed_perms)]
+            ])
+
+        await self.log(
+            channel,
+            "✍️ Cargo editado",
+            f"Um cargo foi alterado",
+            [
+                *fields,
+                ["Quem editou", actor.mention]
+            ],
+    
+        )
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role: discord.Role):

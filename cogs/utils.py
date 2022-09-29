@@ -5,9 +5,13 @@ from libs import config
 
 class Utils(commands.Cog):
 
-    @commands.command("ping", description='Uepa')
-    async def ping(self, ctx):
-        await ctx.send("🏓 Pong!")
+    def __init__(self, bot):
+        self.bot = bot
+
+    @discord.app_commands.command(name="ping")
+    async def ping(self, interaction: discord.Interaction):
+        latency = f"{str(round(self.bot.latency * 1000))} ms"
+        await interaction.response.send_message(f"🏓 **Pong** ({latency})")
 
 
 async def setup(bot):
